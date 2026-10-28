@@ -1,0 +1,169 @@
+/*
+ * Adapted from the TPAC 2026 stylesheet by Bert Bos:
+ * https://www.w3.org/2026/Talks/TPAC/Templates/slides.css
+ * Copyright © 2026 World Wide Web Consortium. All Rights Reserved.
+ * Distributed under the W3C Software License:
+ * https://www.w3.org/Consortium/Legal/copyright-software
+ * Provided WITHOUT ANY WARRANTY, including MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.
+ */
+
+@font-face {
+  font-family: "TPAC Noto Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  src: url("assets/tpac/NotoSans-VariableFont_wdth,wght.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "TPAC Noto Sans";
+  font-style: italic;
+  font-weight: 100 900;
+  src: url("assets/tpac/NotoSans-Italic-VariableFont_wdth,wght.woff2") format("woff2");
+}
+
+/* The original template is 23em tall. These units preserve its layout at 720px. */
+html {
+  font-size: calc(720px / 23);
+  color-scheme: light;
+}
+
+body {
+  background: #000;
+}
+
+.reveal {
+  font-family: "TPAC Noto Sans", sans-serif;
+  font-size: 1rem;
+  font-optical-sizing: none;
+  font-size-adjust: 0.536;
+  line-height: 1.6;
+  color: #000;
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slides section {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 2.9rem 2rem 1rem;
+  background: #fafafa url("assets/tpac/bg-light.svg") 0 0 / 100% auto no-repeat;
+}
+
+.reveal h1,
+.reveal h2 {
+  margin: 0 0 0.5em;
+  font-size: 1.8em;
+  font-size-adjust: 0.5465;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #006a9c;
+  text-wrap: balance;
+}
+
+.reveal h3 {
+  margin: 0.8em 0 0.48em;
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #005a9c;
+  text-transform: uppercase;
+}
+
+.reveal p,
+.reveal ul,
+.reveal ol,
+.reveal li {
+  margin: 0 0 0.6em;
+}
+
+.reveal ul,
+.reveal ol {
+  display: block;
+  padding: 0;
+}
+
+.reveal li {
+  margin-left: 1em;
+}
+
+.reveal strong {
+  font-weight: 700;
+}
+
+.reveal em {
+  padding: 0 0.1em;
+  background: #f7ff00;
+  font-style: normal;
+}
+
+.reveal a {
+  color: #00c;
+}
+
+.reveal .slides section::before {
+  content: attr(data-slide-number);
+  position: absolute;
+  top: 1.62rem;
+  right: 2rem;
+  width: 1.6em;
+  padding: 0.1em;
+  border-radius: 50%;
+  background: #545454;
+  color: #fafafa;
+  font-size: 0.8em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.reveal .slides section.tpac-cover {
+  padding: 8rem 3rem 8rem 19.9rem;
+  background-image: url("assets/tpac/cover-bg.svg");
+  background-color: #a2e7c8;
+  text-align: center;
+}
+
+.reveal .slides section.tpac-cover::before {
+  content: none;
+}
+
+.reveal .tpac-cover h1 {
+  position: absolute;
+  top: 3.6rem;
+  right: 1.6rem;
+  left: 1.6rem;
+  margin: 0;
+  transform: translateY(-50%);
+  color: #0d3020;
+}
+
+.reveal .tpac-cover address {
+  position: absolute;
+  top: 10.55rem;
+  right: 2rem;
+  left: 18rem;
+  margin: 0;
+  padding: 0.5em 1em;
+  transform: translateY(-50%);
+  border-radius: 0.5em;
+  background: #0d3020;
+  color: #fff;
+  font-size: 1.4em;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+/* reveal.js removes section padding in print mode. Keep the TPAC content inset. */
+html.reveal-print .reveal .slides section {
+  padding: 2.9rem 2rem 1rem !important;
+}
+
+@media print {
+  .reveal .slides section {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

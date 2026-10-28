@@ -1,0 +1,273 @@
+.diagram-defs {
+  position: absolute;
+  overflow: hidden;
+  font-family: "TPAC Noto Sans", sans-serif;
+  font-optical-sizing: none;
+}
+
+.reveal .diagram-slide h2 {
+  margin-bottom: 0.35em;
+}
+
+.reveal .statement-slide h2 {
+  position: absolute;
+  top: 52%;
+  right: 2rem;
+  left: 2rem;
+  margin: 0;
+  transform: translateY(-50%);
+  font-size: 2.2rem;
+  text-align: center;
+}
+
+.reveal .network-diagram {
+  display: block;
+  width: 100%;
+  height: 420px;
+  overflow: visible;
+}
+
+.reveal .tall-diagram {
+  height: 470px;
+}
+
+.reveal .network-diagram .fragment,
+.reveal .hole-punch .fragment {
+  transition: none;
+}
+
+/* Unscoped text classes also apply inside SVG <use> instances. */
+text {
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-family: "TPAC Noto Sans", sans-serif;
+  font-optical-sizing: none;
+  font-size-adjust: none;
+}
+
+.node-label,
+.network-diagram .diagram-caption {
+  fill: #18362b;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.service-label {
+  fill: #18362b;
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.network-diagram .mechanism-label {
+  fill: #18362b;
+  font-size: 27px;
+  font-weight: 500;
+}
+
+.minor {
+  fill: #496675;
+  font-size: 23px;
+}
+
+.interface-label {
+  fill: #496675;
+  font-size: 20px;
+}
+
+.path-label {
+  fill: currentColor;
+  font-size: 20px;
+}
+
+.path-markers {
+  color: #496675;
+}
+
+.nat-opening {
+  fill: #bcd4df;
+}
+
+.packet-label {
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.network-diagram .blue { fill: #006a9c; }
+.network-diagram .green { fill: #26734d; }
+.network-diagram .orange { fill: #b65f18; }
+.network-diagram .purple { fill: #755496; }
+.network-diagram .muted { opacity: 0.38; }
+
+.signal-line,
+.data-line,
+.probe-line,
+.response-line,
+.inactive-line {
+  fill: none;
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.signal-line { stroke: #006a9c; stroke-dasharray: 10 7; }
+.data-line { stroke: #26734d; stroke-width: 5; }
+.probe-line { stroke: #b65f18; stroke-dasharray: 8 7; }
+.response-line { stroke: #26734d; stroke-dasharray: 8 7; }
+.inactive-line { stroke: #bacbc3; stroke-width: 3; }
+
+.reveal .slide-reference {
+  position: absolute;
+  right: 2rem;
+  bottom: 0.75rem;
+  left: 2rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #c5d9d0;
+  line-height: 1.3;
+}
+
+.reveal .slide-reference a {
+  display: block;
+  color: #006a9c;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.reveal .slide-reference strong {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.14em;
+}
+
+.reveal .slide-reference span {
+  display: block;
+  margin-top: 0.12rem;
+  color: #496675;
+  font-size: 0.66rem;
+}
+
+.reveal .relay-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.reveal .comparison-table {
+  width: 100%;
+  table-layout: fixed;
+  margin-top: 1.2rem;
+  color: #18362b;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.reveal .comparison-table th,
+.reveal .comparison-table td {
+  padding: 0.65rem;
+  border-bottom: 1px solid #c5d9d0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.reveal .comparison-table thead th {
+  color: #006a9c;
+  font-size: 1rem;
+}
+
+.reveal .comparison-table tbody th {
+  color: #496675;
+  font-weight: 600;
+}
+
+.reveal .slide-reference a:focus-visible {
+  outline: 3px solid #006a9c;
+  outline-offset: 5px;
+}
+
+.reveal .hole-punch {
+  display: block;
+  width: 100%;
+  height: 480px;
+  overflow: visible;
+}
+
+.hole-punch text {
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-size-adjust: none;
+}
+
+.hole-punch .peer-label {
+  fill: #18362b;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.hole-punch .blocked-label {
+  fill: #b65f18;
+  font-size: 24px;
+}
+
+.reveal .draft-references {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem 2rem;
+  margin-top: 1.3rem;
+}
+
+.reveal .draft-references a {
+  padding-top: 0.6rem;
+  border-top: 2px solid #c5d9d0;
+  text-decoration: none;
+}
+
+.reveal .draft-role {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #496675;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.reveal .draft-references h3 {
+  margin: 0 0 0.4rem;
+  color: #006a9c;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-transform: none;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.14em;
+}
+
+.reveal .draft-references p {
+  margin: 0;
+  color: #0d3020;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.reveal .draft-references a:focus-visible {
+  outline: 3px solid #006a9c;
+  outline-offset: 8px;
+}
+
+/* The handout shows the completed diagram, without overlapping earlier steps. */
+html.reveal-print .hole-punch .diagram-initial,
+html.reveal-print .hole-punch .diagram-middle {
+  display: none !important;
+}
+
+html.reveal-print .hole-punch .diagram-final {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html.reveal-print .print-hide {
+  display: none !important;
+}
+
+html.reveal-print .print-show {
+  opacity: 1 !important;
+  visibility: visible !important;
+}

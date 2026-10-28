@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Using QUIC to traverse NATs · TPAC 2026</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="vendor/reveal/reset.css">
+  <link rel="stylesheet" href="vendor/reveal/reveal.css">
+  <link rel="stylesheet" href="tpac.css">
+  <link rel="stylesheet" href="talk.css?v=6d11e714bdfc">
+</head>
+<body>
+  <!-- Shared geometry keeps the peer and relay diagrams consistent. -->
+  <svg class="diagram-defs" width="0" height="0" aria-hidden="true">
+    <defs>
+      <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5"
+        markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 Z" fill="#006a9c" />
+      </marker>
+      <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5"
+        markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 Z" fill="#26734d" />
+      </marker>
+      <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5"
+        markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 Z" fill="#b65f18" />
+      </marker>
+      <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5"
+        markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 Z" fill="#755496" />
+      </marker>
+      <symbol id="icon-laptop" viewBox="0 0 100 80">
+        <g fill="#fff" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+          <rect x="8" y="6" width="84" height="54" rx="5" />
+          <path d="M 8 60 H 92 L 99 72 H 1 Z" />
+          <path d="M 38 65 H 62" fill="none" />
+        </g>
+      </symbol>
+      <symbol id="icon-server" viewBox="0 0 80 100">
+        <g fill="#fff" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+          <rect x="8" y="6" width="64" height="88" rx="6" />
+          <path d="M 8 35 H 72 M 8 64 H 72 M 36 21 H 60 M 36 50 H 60 M 36 79 H 60" fill="none" />
+          <circle cx="23" cy="21" r="3" /><circle cx="23" cy="50" r="3" /><circle cx="23" cy="79" r="3" />
+        </g>
+      </symbol>
+      <symbol id="icon-wifi" viewBox="0 0 32 28">
+        <path d="M 3 9 C 10 2 22 2 29 9 M 8 14 C 12.5 9.5 19.5 9.5 24 14 M 13 19 Q 16 16 19 19"
+          fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        <circle cx="16" cy="24" r="2" fill="currentColor" />
+      </symbol>
+      <symbol id="icon-cellular" viewBox="0 0 32 28">
+        <g fill="currentColor">
+          <rect x="2" y="20" width="4" height="6" rx="1" />
+          <rect x="10" y="15" width="4" height="11" rx="1" />
+          <rect x="18" y="10" width="4" height="16" rx="1" />
+          <rect x="26" y="5" width="4" height="21" rx="1" />
+        </g>
+      </symbol>
+      <g id="left-device">
+        <use href="#icon-laptop" x="32" y="220" width="200" height="160" color="#39687d" />
+      </g>
+      <g id="right-device">
+        <use href="#icon-laptop" x="920" y="220" width="200" height="160" color="#46765b" />
+      </g>
+      <g id="wifi-path-icons">
+        <use href="#icon-wifi" x="256" y="198" width="36" height="32" />
+        <use href="#icon-wifi" x="860" y="198" width="36" height="32" />
+      </g>
+      <g id="cellular-path-icons">
+        <use href="#icon-cellular" x="256" y="291" width="36" height="32" />
+        <use href="#icon-cellular" x="860" y="291" width="36" height="32" />
+      </g>
+      <g id="left-network">
+        <rect x="16" y="186" width="298" height="212" rx="10" fill="#edf5f9" stroke="#c8dce5" stroke-width="2" />
+        <rect x="296" y="186" width="18" height="212" fill="#5c8396" />
+      </g>
+      <g id="peer-networks">
+        <use href="#left-network" />
+        <rect x="838" y="186" width="298" height="212" rx="10" fill="#eef5ef" stroke="#cdded2" stroke-width="2" />
+        <rect x="838" y="186" width="18" height="212" fill="#5c8396" />
+        <use href="#left-device" /><use href="#right-device" />
+        <text class="node-label" x="132" y="208">Peer A</text>
+        <text class="node-label" x="1020" y="208">Peer B</text>
+      </g>
+      <g id="quic-roles">
+        <text class="interface-label" x="132" y="385">QUIC client</text>
+        <text class="interface-label" x="1020" y="385">QUIC server</text>
+      </g>
+      <path id="left-wifi-opening" class="nat-opening" d="M 296 220 L 314 229 V 271 L 296 280 Z" />
+      <path id="left-cellular-opening" class="nat-opening" d="M 296 315 L 314 324 V 366 L 296 375 Z" />
+      <g id="wifi-openings">
+        <use href="#left-wifi-opening" />
+        <path class="nat-opening" d="M 838 229 L 856 220 V 280 L 838 271 Z" />
+      </g>
+      <g id="cellular-openings">
+        <use href="#left-cellular-opening" />
+        <path class="nat-opening" d="M 838 324 L 856 315 V 375 L 838 366 Z" />
+      </g>
+      <g id="relayed-path">
+        <path d="M 530 159 L 236 255.4" />
+        <path d="M 622 159 L 916 255.4" />
+      </g>
+      <g id="three-interface-peers">
+        <rect x="16" y="186" width="298" height="262" rx="10" fill="#edf5f9" stroke="#c8dce5" stroke-width="2" />
+        <rect x="296" y="186" width="18" height="262" fill="#5c8396" />
+        <rect x="838" y="186" width="298" height="262" rx="10" fill="#eef5ef" stroke="#cdded2" stroke-width="2" />
+        <rect x="838" y="186" width="18" height="262" fill="#5c8396" />
+        <g transform="translate(0 20)">
+          <use href="#left-device" /><use href="#right-device" />
+        </g>
+        <text class="node-label" x="132" y="208">Peer A</text>
+        <text class="node-label" x="1020" y="208">Peer B</text>
+        <text class="interface-label" x="132" y="432">QUIC client</text>
+        <text class="interface-label" x="1020" y="432">QUIC server</text>
+        <g class="nat-opening">
+          <rect x="296" y="208" width="18" height="44" />
+          <rect x="838" y="208" width="18" height="44" />
+          <rect x="296" y="302" width="18" height="48" />
+          <rect x="838" y="302" width="18" height="48" />
+          <rect x="296" y="394" width="18" height="48" />
+          <rect x="838" y="394" width="18" height="48" />
+        </g>
+        <g fill="#fff" stroke="#496675" stroke-width="3">
+          <circle cx="274" cy="234" r="10" /><circle cx="878" cy="234" r="10" />
+          <circle cx="274" cy="326" r="10" /><circle cx="878" cy="326" r="10" />
+          <circle cx="274" cy="418" r="10" /><circle cx="878" cy="418" r="10" />
+        </g>
+      </g>
+      <g id="three-interface-relayed-path">
+        <path d="M 530 159 L 292 228" />
+        <path d="M 622 159 L 860 228" />
+      </g>
+      <g id="relay-node">
+        <use href="#icon-server" x="536" y="82" width="80" height="100" color="#46765b" />
+      </g>
+    </defs>
+  </svg>
+  <div class="reveal">
+    <div class="slides">
+      <section id="title" class="tpac-cover" aria-labelledby="cover-title">
+        <h1 id="cover-title">Using QUIC to traverse NATs</h1>
+        <address>Marten Seemann</address>
+      </section>
+
+      <section id="hole-punching" aria-labelledby="hole-punching-title">
+        <h2 id="hole-punching-title">How hole punching works</h2>
+        <svg class="hole-punch" viewBox="0 0 1152 470" role="img"
+          aria-labelledby="diagram-title diagram-description">
+          <title id="diagram-title">Hole punching between two peers behind NATs</title>
+          <desc id="diagram-description">A sends a packet that opens outbound
+            state at its own NAT but is blocked at B's NAT. B then sends toward A,
+            creating state at its NAT too. In this successful example, subsequent
+            packets can pass in both directions.</desc>
+          <defs>
+            <marker id="probe-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 Z" fill="#b65f18" />
+            </marker>
+            <marker id="traffic-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 Z" fill="#26734d" />
+            </marker>
+          </defs>
+
+          <rect x="32" y="62" width="312" height="264" rx="10" fill="#edf5f9" stroke="#c8dce5" stroke-width="2" />
+          <rect x="808" y="62" width="312" height="264" rx="10" fill="#eef5ef" stroke="#cdded2" stroke-width="2" />
+          <rect x="326" y="62" width="18" height="264" fill="#5c8396" />
+          <rect x="808" y="62" width="18" height="264" fill="#5c8396" />
+          <path class="nat-opening" d="M 326 157 L 344 166 V 224 L 326 233 Z" />
+          <path class="nat-opening fragment print-show" data-fragment-index="0"
+            d="M 808 166 L 826 157 V 233 L 808 224 Z" />
+
+          <use href="#icon-laptop" x="108" y="143" width="160" height="128" color="#39687d" />
+          <use href="#icon-laptop" x="884" y="143" width="160" height="128" color="#46765b" />
+          <g class="peer-label">
+            <text x="188" y="113">Peer A</text>
+            <text x="964" y="113">Peer B</text>
+          </g>
+
+          <g class="diagram-initial fragment fade-out" data-fragment-index="0">
+            <path d="M 268 180 H 790" fill="none" stroke="#b65f18"
+              stroke-width="4" marker-end="url(#probe-arrow)" />
+            <path d="M 798 170 L 818 190 M 798 190 L 818 170"
+              fill="none" stroke="#b65f18" stroke-width="4" stroke-linecap="round" />
+            <text class="blocked-label" x="747" y="137">Blocked</text>
+          </g>
+
+          <g class="diagram-middle fragment current-visible" data-fragment-index="0">
+            <path d="M 884 210 H 268" fill="none" stroke="#26734d"
+              stroke-width="4" marker-end="url(#traffic-arrow)" />
+          </g>
+
+          <g class="diagram-final fragment" data-fragment-index="1">
+            <g fill="none" stroke="#26734d" stroke-width="4"
+              marker-end="url(#traffic-arrow)">
+              <path d="M 268 180 H 884" />
+              <path d="M 884 210 H 268" />
+            </g>
+          </g>
+        </svg>
+      </section>
+
+      <section id="ice" class="diagram-slide" aria-labelledby="ice-title">
+        <h2 id="ice-title">Run ICE, then QUIC</h2>
+        <svg class="network-diagram tall-diagram" viewBox="0 0 1152 470" role="img"
+          aria-labelledby="ice-diagram-title ice-description">
+          <title id="ice-diagram-title">The ICE setup machinery before the QUIC handshake</title>
+          <desc id="ice-description">The application starts with an intent to
+            connect, such as joining a call. ICE setup includes address discovery,
+            candidate exchange through application signaling, and connectivity
+            checks. A direct path or a TURN relay path is selected before the
+            QUIC handshake.</desc>
+          <g class="signal-line" marker-end="url(#arrow-blue)">
+            <path d="M 184 230 H 228" />
+            <path d="M 928 230 H 972" />
+          </g>
+          <rect x="8" y="174" width="176" height="112" rx="16" fill="#edf5f9" stroke="#5c93b0" stroke-width="2" />
+          <text class="node-label" x="96" y="213">Join a</text>
+          <text class="node-label" x="96" y="251">call</text>
+
+          <rect x="232" y="30" width="696" height="370" rx="18" fill="#edf5f9" stroke="#5c93b0" stroke-width="2" />
+          <text class="node-label blue" x="580" y="70">ICE</text>
+          <g fill="#006a9c">
+            <circle cx="294" cy="117" r="4" />
+            <circle cx="294" cy="190" r="4" />
+            <circle cx="294" cy="263" r="4" />
+            <circle cx="294" cy="336" r="4" />
+          </g>
+          <text class="mechanism-label" x="318" y="117" style="text-anchor: start">Address discovery</text>
+          <text class="minor" x="318" y="147" style="text-anchor: start">Local addresses · STUN · TURN</text>
+          <text class="mechanism-label" x="318" y="190" style="text-anchor: start">Candidate exchange</text>
+          <text class="minor" x="318" y="220" style="text-anchor: start">Application signaling</text>
+          <text class="mechanism-label" x="318" y="263" style="text-anchor: start">Connectivity checks</text>
+          <text class="minor" x="318" y="293" style="text-anchor: start">Probe candidate pairs</text>
+          <text class="mechanism-label" x="318" y="336" style="text-anchor: start">Path selection</text>
+          <text class="minor" x="318" y="366" style="text-anchor: start">Direct path or TURN relay</text>
+
+          <rect x="976" y="174" width="176" height="112" rx="16" fill="#eef5ef" stroke="#608f73" stroke-width="2" />
+          <text class="node-label" x="1064" y="213">QUIC</text>
+          <text class="node-label" x="1064" y="251">handshake</text>
+        </svg>
+      </section>
+
+      <section id="quic-all" class="statement-slide" aria-labelledby="quic-all-title">
+        <h2 id="quic-all-title">What if QUIC<br>could do it all?</h2>
+      </section>
+
+      <section id="quic-migration" class="diagram-slide" aria-labelledby="migration-title">
+        <h2 id="migration-title">RFC 9000: QUIC connection migration</h2>
+        <svg class="network-diagram" viewBox="0 0 1152 420" role="img"
+          aria-labelledby="migration-diagram-title migration-description">
+          <title id="migration-diagram-title">A client moves an established QUIC connection from Wi-Fi to cellular</title>
+          <desc id="migration-description">A laptop behind NATs or firewalls has Wi-Fi and cellular
+            paths identified by Wi-Fi arcs and cellular signal bars inside its network box, introduced with text labels beside the arrows. A public QUIC server has a stable address and
+            no NAT boundary. First show application data on Wi-Fi. Then show both
+            endpoints sending PATH_CHALLENGE and PATH_RESPONSE on the cellular
+            path together, with bidirectional arrows for each frame type.
+            Finally the same connection moves to cellular, leaving the original
+            Wi-Fi path visible in grey. The client initiates
+            migration, while both endpoints validate the path.</desc>
+          <g transform="translate(0 -24)">
+            <g>
+              <use href="#left-network" />
+              <use href="#left-wifi-opening" />
+              <use href="#left-cellular-opening" class="fragment print-show" data-fragment-index="0" />
+              <use href="#left-device" />
+            </g>
+            <text class="node-label" x="132" y="208">QUIC client</text>
+            <use href="#icon-server" x="966" y="206" width="120" height="180" color="#46765b" />
+            <text class="node-label" x="1026" y="208">QUIC server</text>
+            <g class="path-markers">
+              <use href="#icon-wifi" x="256" y="198" width="36" height="32" />
+              <text class="path-label" x="334" y="214" style="text-anchor: start">Wi-Fi</text>
+            </g>
+            <g class="path-markers fragment print-show" data-fragment-index="0">
+              <use href="#icon-cellular" x="256" y="291" width="36" height="32" />
+              <text class="path-label" x="334" y="308" style="text-anchor: start">Cellular</text>
+            </g>
+            <g class="fragment fade-out print-hide" data-fragment-index="1">
+              <path class="data-line" d="M 232 250 H 962" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+              <text class="minor green" x="640" y="216">Established path</text>
+            </g>
+            <g class="fragment current-visible print-hide" data-fragment-index="0">
+              <path class="probe-line" d="M 232 334 H 962" marker-start="url(#arrow-orange)" marker-end="url(#arrow-orange)" />
+              <path class="response-line" d="M 242 356 H 962" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+              <text class="packet-label orange" x="640" y="308">PATH_CHALLENGE</text>
+              <text class="packet-label green" x="640" y="387">PATH_RESPONSE</text>
+            </g>
+            <g class="fragment print-show" data-fragment-index="1">
+              <path class="inactive-line" d="M 232 250 H 962" style="stroke: #b5bec3" />
+              <path class="data-line" d="M 238 345 H 962" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+              <text class="minor green" x="640" y="310">Application data</text>
+            </g>
+          </g>
+        </svg>
+      </section>
+
+      <section id="preferred-address" class="diagram-slide" aria-labelledby="preferred-address-title">
+        <h2 id="preferred-address-title">RFC 9000: preferred address</h2>
+        <svg class="network-diagram tall-diagram" viewBox="0 0 1152 470" role="img"
+          aria-labelledby="preferred-diagram-title preferred-description">
+          <title id="preferred-diagram-title">A QUIC connection migrates from an anycast address to a unicast address</title>
+          <desc id="preferred-description">A client initially connects to an
+            anycast address shared by multiple servers. The server handling the
+            connection announces its unicast address as the preferred address
+            in the handshake. Parallel bidirectional challenge and response
+            arrows show validation before the client migrates the same
+            connection to that unicast address. RFC 9000 does not provide updates
+            to the preferred address during the connection.</desc>
+          <g transform="translate(0 -24)">
+            <use href="#left-network" />
+            <path class="nat-opening" d="M 296 220 L 314 229 V 313 L 296 322 Z" />
+            <use href="#left-device" />
+            <text class="node-label" x="132" y="208">QUIC client</text>
+            <use href="#icon-wifi" x="256" y="198" width="36" height="32" class="path-markers" />
+            <use href="#icon-server" x="966" y="206" width="120" height="180" color="#46765b" />
+            <text class="node-label" x="1026" y="208">QUIC server</text>
+            <path class="data-line" d="M 232 250 H 962" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+            <text class="minor purple" x="556" y="216">Preferred address in handshake</text>
+            <text class="path-label" x="852" y="222" color="#496675">Anycast address</text>
+            <path class="probe-line" d="M 242 270 L 962 334" marker-start="url(#arrow-orange)" marker-end="url(#arrow-orange)" />
+            <path class="response-line" d="M 242 292 L 962 356" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+            <text class="path-label" x="852" y="389" color="#755496">Unicast address</text>
+            <text class="minor orange" x="576" y="353">Validate, then migrate</text>
+            <text class="minor" x="576" y="448">No address updates after the handshake</text>
+          </g>
+        </svg>
+      </section>
+
+      <section id="both-peers-probe" class="diagram-slide" data-visibility="hidden" aria-labelledby="both-probe-title">
+        <h2 id="both-probe-title">What if both peers could open a path?</h2>
+        <svg class="network-diagram tall-diagram" viewBox="0 0 1152 470" role="img"
+          aria-labelledby="both-probe-diagram-title both-probe-description">
+          <title id="both-probe-diagram-title">Extend path probing to two peers behind NATs</title>
+          <desc id="both-probe-description">Both QUIC endpoints are now laptops
+            behind NATs or firewalls. Wi-Fi arcs and cellular signal bars sit inside each peer’s network box, beside the paths.
+            A green line preserves the original Wi-Fi path.
+            Orange arrows show outbound probing from each peer's cellular
+            interface toward the other. Candidate addresses and coordination
+            are needed to arrange an attempt.</desc>
+          <g transform="translate(0 -24)">
+            <use href="#peer-networks" />
+            <use href="#quic-roles" />
+            <use href="#wifi-openings" />
+            <use href="#cellular-openings" />
+            <use href="#wifi-path-icons" class="path-markers" />
+            <use href="#cellular-path-icons" class="path-markers" />
+            <path class="data-line" d="M 232 250 H 920" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+            <text class="minor green" x="576" y="214">Original path</text>
+            <g class="probe-line" marker-end="url(#arrow-orange)">
+              <path d="M 232 334 H 920" />
+              <path d="M 910 356 H 242" />
+            </g>
+            <text class="minor orange" x="576" y="301">QUIC path probes</text>
+          </g>
+        </svg>
+      </section>
+
+      <section id="server-addresses" class="diagram-slide" aria-labelledby="server-addresses-title">
+        <h2 id="server-addresses-title">Ingredient 1: address advertisement</h2>
+        <svg class="network-diagram tall-diagram" viewBox="0 0 1152 470" role="img"
+          aria-labelledby="server-addresses-diagram-title server-addresses-description">
+          <title id="server-addresses-diagram-title">A public server advertises a new preferred address during a QUIC connection</title>
+          <desc id="server-addresses-description">A client behind a NAT has an
+            established QUIC connection to address A of a public server. Over
+            that connection, an ALTERNATIVE_ADDRESS frame advertises address B
+            as preferred. A
+            dashed orange path shows the client probing B before migrating.
+            Both addresses belong to the same server, which has no NAT boundary.
+            This illustrates address advertisement's independent use for changing
+            server addresses, without coordinated hole punching.</desc>
+          <g transform="translate(0 -24)">
+            <use href="#left-network" />
+            <path class="nat-opening" d="M 296 220 L 314 229 V 288 L 296 297 Z" />
+            <use href="#left-device" />
+            <text class="node-label" x="132" y="208">QUIC client</text>
+            <use href="#icon-wifi" x="256" y="198" width="36" height="32" class="path-markers" />
+            <use href="#icon-server" x="966" y="206" width="120" height="180" color="#46765b" />
+            <text class="node-label" x="1026" y="208">QUIC server</text>
+            <path class="data-line" d="M 232 250 H 962" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+            <text class="minor purple" x="572" y="216">ALTERNATIVE_ADDRESS</text>
+            <text class="path-label" x="852" y="222" color="#496675">Address A</text>
+            <path class="probe-line" d="M 242 270 L 962 345" marker-end="url(#arrow-orange)" />
+            <text class="path-label" x="852" y="373" color="#755496">B (preferred)</text>
+            <text class="minor orange" x="576" y="353">Probe, then migrate</text>
+            <text class="minor" x="576" y="448">Independent use: server address changes</text>
+          </g>
+        </svg>
+        <div class="slide-reference">
+          <a href="https://datatracker.ietf.org/doc/draft-munizaga-quic-alternative-server-address/">
+            <strong>QUIC Alternative Server Address Frames</strong>
+            <span>Marco Munizaga, Marten Seemann</span>
+          </a>
+        </div>
+      </section>
+
+      <section id="coordination" class="diagram-slide" aria-labelledby="coordination-title">
+        <h2 id="coordination-title">Ingredient 2: server-side probing</h2>
+        <svg class="network-diagram tall-diagram" viewBox="0 0 1152 470" role="img"
+          aria-labelledby="coordination-diagram-title coordination-description">
+          <title id="coordination-diagram-title">Coordinate probes on two candidate paths over a relayed QUIC connection</title>
+          <desc id="coordination-description">Each peer has three interfaces,
+            shown as plain connection points. The top interface carries the
+            established relayed QUIC path. Two parallel, labeled arrow routes
+            show the frame directions through the relay: green PUNCH_REQUEST
+            arrows run from client to server, and purple ALTERNATIVE_ADDRESS
+            arrows run from server to client. They share one QUIC connection.
+            The two lower interface pairs are candidate paths being probed in
+            both directions. The server's outgoing probes are emphasized. The
+            client selects pairs and requests repeated attempts; the two shown
+            are examples, not the complete set of possible candidate pairs.</desc>
+          <g transform="translate(0 -24)">
+            <use href="#three-interface-peers" />
+            <g fill="none" stroke-width="4">
+              <path d="M 292 219 L 530 149 M 622 149 L 860 219"
+                stroke="#26734d" marker-end="url(#arrow-green)" />
+              <path d="M 860 237 L 622 169 M 530 169 L 292 237"
+                stroke="#755496" marker-end="url(#arrow-purple)" />
+            </g>
+            <use href="#relay-node" />
+            <text class="node-label" x="576" y="66">Relay server</text>
+            <text class="minor purple" x="352" y="126">ALTERNATIVE_ADDRESS</text>
+            <text class="minor green" x="814" y="126">PUNCH_REQUEST</text>
+            <text class="minor green" x="576" y="230">Relayed QUIC connection</text>
+            <text class="minor orange" x="576" y="286">QUIC path probes</text>
+            <g class="probe-line" marker-end="url(#arrow-orange)">
+              <path d="M 292 318 H 860" opacity="0.55" />
+              <path d="M 860 334 H 292" stroke-width="5" />
+              <path d="M 292 410 H 860" opacity="0.55" />
+              <path d="M 860 426 H 292" stroke-width="5" />
+            </g>
+          </g>
+        </svg>
+        <div class="slide-reference">
+          <a href="https://datatracker.ietf.org/doc/draft-seemann-quic-nat-traversal/">
+            <strong>Using QUIC to traverse NATs</strong>
+            <span>Marten Seemann, Eric Kinnear</span>
+          </a>
+        </div>
+      </section>
+
+      <section id="direct-path" class="diagram-slide" aria-labelledby="direct-title">
+        <h2 id="direct-title">Hole punching inside QUIC</h2>
+        <svg class="network-diagram tall-diagram" viewBox="0 0 1152 470" role="img"
+          aria-labelledby="direct-diagram-title direct-description">
+          <title id="direct-diagram-title">QUIC path validation and migration provide hole punching within the connection</title>
+          <desc id="direct-description">The existing QUIC connection carries
+            application data and coordination through the relay while path
+            validation tests two direct paths on the lower interface pairs.
+            Each peer has three plain interface points, with the top interface
+            reserved for the relay. On success, QUIC connection migration moves
+            application data to the bottom path without a new handshake; the
+            other candidate path and the relay are muted. If no usable direct
+            path is found, the connection can keep using the relay.</desc>
+          <g transform="translate(0 -24)">
+            <use href="#three-interface-peers" />
+            <g class="fragment fade-out print-hide" data-fragment-index="0">
+              <path class="response-line" d="M 292 326 H 860 M 292 418 H 860" />
+              <text class="minor green" x="576" y="286">QUIC path validation</text>
+              <use href="#three-interface-relayed-path" class="data-line"
+                marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+              <use href="#relay-node" />
+            </g>
+            <g class="fragment print-show" data-fragment-index="0">
+              <path class="data-line" d="M 292 418 H 860" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)" />
+              <text class="minor green" x="576" y="382">QUIC connection migration</text>
+              <g class="muted">
+                <path class="inactive-line" d="M 292 326 H 860" />
+                <use href="#three-interface-relayed-path" class="inactive-line" />
+                <use href="#relay-node" />
+              </g>
+            </g>
+          </g>
+        </svg>
+      </section>
+
+      <section id="quic-vs-ice" aria-labelledby="comparison-title">
+        <h2 id="comparison-title">ICE and QUIC hole punching</h2>
+        <table class="comparison-table" aria-labelledby="comparison-title">
+          <colgroup><col style="width: 25%"><col style="width: 37.5%"><col style="width: 37.5%"></colgroup>
+          <thead>
+            <tr>
+              <td></td>
+              <th scope="col">ICE</th>
+              <th scope="col">QUIC hole punching</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Application data</th>
+              <td>After connectivity checks</td>
+              <td>During hole punching</td>
+            </tr>
+            <tr>
+              <th scope="row">Pairing &amp; timing</th>
+              <td>Both endpoints<br>run checklists</td>
+              <td>Client decides</td>
+            </tr>
+            <tr>
+              <th scope="row">Server</th>
+              <td>Pair candidates<br>Schedule &amp; run checks</td>
+              <td>Advertise addresses<br>Probe on request</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="rendezvous" class="diagram-slide" aria-labelledby="rendezvous-title">
+        <h2 id="rendezvous-title">Standardize the initial relayed path?</h2>
+        <svg class="network-diagram" viewBox="0 0 1152 420" role="img"
+          aria-labelledby="rendezvous-diagram-title rendezvous-description">
+          <title id="rendezvous-diagram-title">An open question: a common way to establish the initial relayed connection</title>
+          <desc id="rendezvous-description">Return to the relayed connection assumed
+            earlier. Two peers exchange end-to-end QUIC packets through a relay
+            server. UDP Rendezvous over HTTP and CONNECT-UDP Listen, now called
+            Bind, are alternative ways to obtain a relayed path. The diagram
+            shows the shared topology without prescribing the setup exchanges
+            or encapsulation on either leg.</desc>
+          <g transform="translate(0 -24)">
+            <use href="#peer-networks" />
+            <use href="#wifi-openings" />
+            <use href="#wifi-path-icons" class="path-markers" />
+            <use href="#relayed-path" class="data-line" marker-end="url(#arrow-green)" />
+            <use href="#relay-node" />
+            <text class="node-label" x="576" y="66">Relay server</text>
+            <text class="diagram-caption green" x="576" y="278">Relayed QUIC connection</text>
+          </g>
+        </svg>
+        <div class="slide-reference relay-options">
+          <a href="https://datatracker.ietf.org/doc/draft-seemann-masque-connect-udp-rendezvous/">
+            <strong>UDP Rendezvous over HTTP</strong><span>Marten Seemann</span>
+          </a>
+          <a href="https://datatracker.ietf.org/doc/draft-ietf-masque-connect-udp-listen/">
+            <strong>CONNECT-UDP Listen (now Bind)</strong><span>David Schinazi, Abhijit Singh</span>
+          </a>
+        </div>
+      </section>
+
+      <section id="done" aria-labelledby="done-title">
+        <h2 id="done-title">Thank you</h2>
+        <div class="draft-references">
+          <a href="https://datatracker.ietf.org/doc/draft-seemann-masque-connect-udp-rendezvous/">
+            <span class="draft-role">One possible starting point</span>
+            <h3>UDP Rendezvous over HTTP</h3>
+            <p>Marten Seemann</p>
+          </a>
+          <a href="https://datatracker.ietf.org/doc/draft-munizaga-quic-alternative-server-address/">
+            <span class="draft-role">Ingredient 1: advertise addresses</span>
+            <h3>QUIC Alternative Server Address Frames</h3>
+            <p>Marco Munizaga · Marten Seemann</p>
+          </a>
+          <a href="https://datatracker.ietf.org/doc/draft-seemann-quic-nat-traversal/">
+            <span class="draft-role">Ingredient 2: server-side probing</span>
+            <h3>Using QUIC to traverse NATs</h3>
+            <p>Marten Seemann · Eric Kinnear</p>
+          </a>
+          <a href="https://datatracker.ietf.org/doc/draft-ietf-quic-address-discovery/">
+            <span class="draft-role">Discover an observed address</span>
+            <h3>QUIC Address Discovery</h3>
+            <p>Marten Seemann · Christian Huitema</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="vendor/reveal/reveal.js"></script>
+  <script>
+    document.querySelectorAll('.slides > section:not([data-visibility="hidden"])').forEach((slide, index) => {
+      slide.dataset.slideNumber = index + 1;
+    });
+
+    Reveal.initialize({
+      width: 1280,
+      height: 720,
+      margin: 0,
+      center: false,
+      hash: true,
+      controls: false,
+      progress: false,
+      transition: 'none',
+      view: 'slide',
+      pdfMaxPagesPerSlide: 1,
+      pdfSeparateFragments: false
+    });
+  </script>
+</body>
+</html>
